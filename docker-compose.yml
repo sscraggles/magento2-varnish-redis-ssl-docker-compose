@@ -63,7 +63,7 @@ services:
       - ./web_server/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
       - ./web_server/envvars:/etc/apache2/envvars
     ports:
-      - "8080:8080"
+      - "6060:6060"
     links:
       - database_server
     

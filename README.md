@@ -33,13 +33,13 @@ Nginx servers as reverse proxy server that receives traffic on port 80 and 443 a
 
 In this project, we are using:
 
-> Operating system: Ubuntu 14.04
+> Operating system: Ubuntu ~~14.04~~ 16.04
 
 > Web Server: Apache2
 
-> Database Server: Mysql-server-5.6
+> Database Server: ~~Mysql-server-5.6~~ MariaDB
 
-> Cache Server: Varnish 3.0.
+> Cache Server: Varnish ~~3.0~~ 4.0.
 
 > Redis server: Redis 
 
@@ -47,9 +47,9 @@ In this project, we are using:
 
 > PHP version: PHP-7.0
 
-> Magento 2.1.6
+> Magento ~~2.1.6~~ 2.2.4
 
-To begin with, please install docker and docker-compose on your ubuntu 14.04 server. 
+To begin with, please install docker and docker-compose on your ~~ubuntu 14.04~~ ubuntu/debian server. 
 
 Then follow the following steps:
 

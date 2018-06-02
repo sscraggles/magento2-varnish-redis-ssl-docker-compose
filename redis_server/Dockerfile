@@ -1,10 +1,13 @@
-From ubuntu:14.04
+#From ubuntu:14.04
+FROM ubuntu:16.04
 
 MAINTAINER Alankrit Srivastava alankrit.srivastava256@webkul.com
 
 ##update server
 
 RUN apt-get update \
+
+&& apt-get install locales \
 
 && locale-gen en_US.UTF-8 \
 && export LANG=en_US.UTF-8 \
@@ -19,7 +22,7 @@ RUN apt-get update \
 
 && sed -i -e"s/^bind\s127.0.0.1/bind 0.0.0.0/" /etc/redis/redis.conf \
 
-&& chown -R redis:syslog /var/log/redis/ \
+&& chown -R redis:redis /var/log/redis/ \
 
 ##install supervisor and setup supervisord.conf file
 

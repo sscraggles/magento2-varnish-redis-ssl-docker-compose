@@ -1,3 +1,5 @@
+vcl 4.0;
+
 import std;
 # The minimal Varnish version is 3.0.5
 # For SSL offloading, pass the following header in your proxy server or load balancer: 'X-Forwarded-Proto: https'
@@ -5,7 +7,8 @@ import std;
 
 backend default {
     .host = "apache2";
-    .port = "8080";
+    .port = "6060";
+    .first_byte_timeout = 600s;
 }
 
 acl purge {
@@ -22,30 +25,30 @@ sub vcl_recv {
         }
     }
 
-    if (req.request == "PURGE") {
+    if (req.method == "PURGE") {
         if (client.ip !~ purge) {
-            error 405 "Method not allowed";
+            return (synth(405, "Method not allowed"));
         }
         if (!req.http.X-Magento-Tags-Pattern) {
-            error 400 "X-Magento-Tags-Pattern header required";
+            return (synth(400, "X-Magento-Tags-Pattern header required"));
         }
         ban("obj.http.X-Magento-Tags ~ " + req.http.X-Magento-Tags-Pattern);
-        error 200 "Purged";
+        return (synth(200, "Purged"));
     }
 
-    if (req.request != "GET" &&
-        req.request != "HEAD" &&
-        req.request != "PUT" &&
-        req.request != "POST" &&
-        req.request != "TRACE" &&
-        req.request != "OPTIONS" &&
-        req.request != "DELETE") {
+    if (req.method != "GET" &&
+        req.method != "HEAD" &&
+        req.method != "PUT" &&
+        req.method != "POST" &&
+        req.method != "TRACE" &&
+        req.method != "OPTIONS" &&
+        req.method != "DELETE") {
           /* Non-RFC2616 or CONNECT which is weird. */
           return (pipe);
     }
 
     # We only deal with GET and HEAD by default
-    if (req.request != "GET" && req.request != "HEAD") {
+    if (req.method != "GET" && req.method != "HEAD") {
         return (pass);
     }
 
@@ -67,9 +70,7 @@ sub vcl_recv {
         unset req.http.Cookie;
     }
 
-    set req.grace = 1m;
-
-    return (lookup);
+    return (hash);
 }
 
 sub vcl_hash {
@@ -83,21 +84,24 @@ sub vcl_hash {
     
 }
 
-sub vcl_fetch {
+sub vcl_backend_response {
     if (beresp.http.content-type ~ "text") {
         set beresp.do_esi = true;
     }
 
-    if (req.url ~ "\.js$" || beresp.http.content-type ~ "text") {
+    if (bereq.url ~ "\.js$" || beresp.http.content-type ~ "text") {
         set beresp.do_gzip = true;
     }
 
     # cache only successfully responses and 404s
     if (beresp.status != 200 && beresp.status != 404) {
         set beresp.ttl = 0s;
-        return (hit_for_pass);
+        set beresp.uncacheable = true;
+        return (deliver);
     } elsif (beresp.http.Cache-Control ~ "private") {
-        return (hit_for_pass);
+        set beresp.uncacheable = true;
+        set beresp.ttl = 86400s;
+        return (deliver);
     }
 
     if (beresp.http.X-Magento-Debug) {
@@ -106,15 +110,25 @@ sub vcl_fetch {
 
     # validate if we need to cache it and prevent from setting cookie
     # images, css and js are cacheable by default so we have to remove cookie also
-    if (beresp.ttl > 0s && (req.request == "GET" || req.request == "HEAD")) {
+    if (beresp.ttl > 0s && (bereq.method == "GET" || bereq.method == "HEAD")) {
         unset beresp.http.set-cookie;
-            if (req.url !~ "\.(ico|css|js|jpg|jpeg|png|gif|tiff|bmp|mp3|ogg|svg|swf|woff|woff2|eot|ttf|otf)(\?|$)") {
+            if (bereq.url !~ "\.(ico|css|js|jpg|jpeg|png|gif|tiff|bmp|mp3|ogg|svg|swf|woff|woff2|eot|ttf|otf)(\?|$)") {
             set beresp.http.Pragma = "no-cache";
             set beresp.http.Expires = "-1";
             set beresp.http.Cache-Control = "no-store, no-cache, must-revalidate, max-age=0";
             set beresp.grace = 1m;
         }
     }
+
+   # If page is not cacheable then bypass varnish for 2 minutes as Hit-For-Pass
+   if (beresp.ttl <= 0s ||
+        beresp.http.Surrogate-control ~ "no-store" ||
+        (!beresp.http.Surrogate-Control && beresp.http.Vary == "*")) {
+        # Mark as Hit-For-Pass for the next 2 minutes
+        set beresp.ttl = 120s;
+        set beresp.uncacheable = true;
+    }
+    return (deliver);
 }
 
 sub vcl_deliver {

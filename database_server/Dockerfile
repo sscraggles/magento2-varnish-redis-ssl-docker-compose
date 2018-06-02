@@ -1,4 +1,5 @@
-From ubuntu:14.04
+#From ubuntu:14.04
+FROM ubuntu:16.04
 
 MAINTAINER Alankrit Srivastava alankrit.srivastava256@webkul.com
 
@@ -12,13 +13,13 @@ RUN apt-get update \
 
 && DEBIAN_FRONTEND=noninteractive apt-get -y install debconf-utils \
 
-&& echo "mysql-server-5.6 mysql-server/root_password password ${mysql_password}" | debconf-set-selections \
+&& echo "mariadb-server mariadb-server/root_password password ${mysql_password}" | debconf-set-selections \
 
-&& echo "mysql-server-5.6 mysql-server/root_password_again password ${mysql_password}" | debconf-set-selections \
+&& echo "mariadb-server mariadb-server/root_password_again password ${mysql_password}" | debconf-set-selections \
 
-&& DEBIAN_FRONTEND=noninteractive  apt-get install -y mysql-server-5.6 \
+&& DEBIAN_FRONTEND=noninteractive  apt-get install -y mariadb-server \
 
-&& sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/my.cnf \
+&& sed -i -e"s/^bind-address\s*=\s*127.0.0.1/bind-address = 0.0.0.0/" /etc/mysql/mariadb.conf.d/50-server.cnf \
 
 ##install supervisor and setup supervisord.conf file
 

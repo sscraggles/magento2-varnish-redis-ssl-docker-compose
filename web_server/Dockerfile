@@ -1,10 +1,13 @@
-From ubuntu:14.04
+#From ubuntu:14.04
+FROM ubuntu:16.04
 
 MAINTAINER Alankrit Srivastava alankrit.srivastava256@webkul.com
 
 ##update server
 
 RUN apt-get update \
+
+&& apt-get install locales \
 
 ##install apache2 and other required packages
 
@@ -24,7 +27,7 @@ RUN apt-get update \
 
 && sed -i "/Listen 80/d" /etc/apache2/ports.conf \
 
-&& echo "Listen 8080" >> /etc/apache2/ports.conf \
+&& echo "Listen 6060" >> /etc/apache2/ports.conf \
 
 && a2enmod php7.0 \
 
@@ -40,6 +43,6 @@ RUN apt-get update \
  
 && mkdir -p /var/log/supervisor
 
-Expose 8080
+Expose 6060
 
 CMD ["/usr/bin/supervisord"]
