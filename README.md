@@ -55,7 +55,7 @@ Then follow the following steps:
 
 1). Clone or download this repository as 
 
-> git clone https://github.com/webkul/magento2-varnish-redis-ssl-docker-compose.git
+> git clone https://github.com/sscraggles/magento2-varnish-redis-ssl-docker-compose.git
 
 2) Set/modify mysql root credentials. Go to ~/magento2-varnish-redis-ssl-docker-compose/docker-compose.yml and change mysql root password in database_server in:
 
